@@ -31,14 +31,10 @@ public class ScheduleServiceImpl implements ScheduleService {
     @Transactional
     public ScheduleDTO createSchedule(ScheduleRequestDTO request) {
         try {
-            Fleet fleet = fleetRepository.findByPlateNo(request.getPlateNo())
-                    .orElseThrow(() -> new IllegalArgumentException("Fleet not found"));
-
-            Route route = routeRepository.findById(request.getRouteId())
-                    .orElseThrow(() -> new IllegalArgumentException("Route not found"));
+            Fleet fleet = getScheduleFleet(request.getPlateNo());
+            Route route = getScheduleRoute(request.getRouteId());
 
             boolean isDuplicate = checkDuplicateSchedule(request);
-
             if (isDuplicate) {
                 throw new IllegalArgumentException("Schedule already exists");
             }
@@ -55,6 +51,49 @@ public class ScheduleServiceImpl implements ScheduleService {
             log.error("Failed to create schedule: {}", ex.getMessage());
             throw ex;
         }
+    }
+
+    @Override
+    @Transactional
+    public ScheduleDTO updateSchedule(Long id, ScheduleRequestDTO request) {
+        try {
+            Schedule schedule = getScheduleById(id);
+            Fleet fleet = getScheduleFleet(request.getPlateNo());
+            Route route = getScheduleRoute(request.getRouteId());
+
+            if (!schedule.getDepTime().isEqual(request.getDepTime())
+                    || !schedule.getArrTime().isEqual(request.getArrTime())) {
+                boolean isDuplicate = checkDuplicateSchedule(request);
+                if (isDuplicate) {
+                    throw new IllegalArgumentException("Schedule already exists");
+                }
+            }
+
+            schedule.setFleet(fleet);
+            schedule.setRoute(route);
+            schedule.setDepTime(request.getDepTime());
+            schedule.setArrTime(request.getArrTime());
+
+            return constructScheduleDto(scheduleRepository.save(schedule));
+        } catch (Exception ex) {
+            log.error("Failed to update schedule: {}", ex.getMessage());
+            throw ex;
+        }
+    }
+
+    private Fleet getScheduleFleet(String plateNo) {
+        return fleetRepository.findByPlateNo(plateNo)
+                .orElseThrow(() -> new IllegalArgumentException("Fleet not found"));
+    }
+
+    private Route getScheduleRoute(Long id) {
+        return routeRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Route not found"));
+    }
+
+    private Schedule getScheduleById(Long id) {
+        return scheduleRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Schedule not found"));
     }
 
     private boolean checkDuplicateSchedule(ScheduleRequestDTO request) {

@@ -7,10 +7,7 @@ import com.travel.booking.domain.schedule.service.ScheduleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/schedules")
@@ -22,5 +19,10 @@ public class ScheduleController {
     @PostMapping
     public ResponseEntity<BaseResponse> createSchedule(@Valid @RequestBody ScheduleRequestDTO request) {
         return ResponseWrapper.created("Schedule created successfully", scheduleService.createSchedule(request));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<BaseResponse> updateSchedule(@PathVariable Long id, @Valid @RequestBody ScheduleRequestDTO request) {
+        return ResponseWrapper.ok("Schedule updated successfully", scheduleService.updateSchedule(id, request));
     }
 }
