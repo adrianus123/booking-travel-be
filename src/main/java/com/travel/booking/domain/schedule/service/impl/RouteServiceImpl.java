@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import static com.travel.booking.common.util.StringUtil.formattingPrice;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -116,10 +118,5 @@ public class RouteServiceImpl implements RouteService {
                 .destCity(entity.getDestCity())
                 .price(formattingPrice(entity.getPrice()))
                 .build();
-    }
-
-    private String formattingPrice(BigDecimal price) {
-        NumberFormat currency = NumberFormat.getCurrencyInstance(Locale.of("id", "ID"));
-        return currency.format(price);
     }
 }
