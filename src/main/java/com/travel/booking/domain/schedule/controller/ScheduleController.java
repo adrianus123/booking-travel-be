@@ -25,4 +25,9 @@ public class ScheduleController {
     public ResponseEntity<BaseResponse> updateSchedule(@PathVariable Long id, @Valid @RequestBody ScheduleRequestDTO request) {
         return ResponseWrapper.ok("Schedule updated successfully", scheduleService.updateSchedule(id, request));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<BaseResponse> detailSchedule(@PathVariable Long id) {
+        return ResponseWrapper.ok("Success", scheduleService.getScheduleDetail(id));
+    }
 }

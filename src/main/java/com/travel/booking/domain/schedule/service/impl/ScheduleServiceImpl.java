@@ -81,6 +81,12 @@ public class ScheduleServiceImpl implements ScheduleService {
         }
     }
 
+    @Override
+    public ScheduleDTO getScheduleDetail(Long id) {
+        Schedule schedule = getScheduleById(id);
+        return constructScheduleDto(schedule);
+    }
+
     private Fleet getScheduleFleet(String plateNo) {
         return fleetRepository.findByPlateNo(plateNo)
                 .orElseThrow(() -> new IllegalArgumentException("Fleet not found"));

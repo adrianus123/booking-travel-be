@@ -6,4 +6,5 @@ import com.travel.booking.domain.schedule.dto.response.ScheduleDTO;
 public interface ScheduleService {
     ScheduleDTO createSchedule(ScheduleRequestDTO request);
     ScheduleDTO updateSchedule(Long id, ScheduleRequestDTO request);
+    ScheduleDTO getScheduleDetail(Long id);
 }
