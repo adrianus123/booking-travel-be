@@ -30,4 +30,9 @@ public class ScheduleController {
     public ResponseEntity<BaseResponse> detailSchedule(@PathVariable Long id) {
         return ResponseWrapper.ok("Success", scheduleService.getScheduleDetail(id));
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<BaseResponse> deleteSchedule(@PathVariable Long id) {
+        return ResponseWrapper.ok("Schedule deleted successfully", scheduleService.deleteSchedule(id));
+    }
 }
