@@ -15,14 +15,14 @@ pipeline {
 
         stage('Compile & Test') {
             steps {
-                sh 'mvn clean test'
+                sh './mvnw clean test'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('SonarQube') {
-                    sh 'mvn sonar:sonar \
+                    sh './mvnw sonar:sonar \
                         -Dsonar.projectKey=booking-travel-service \
                         -Dsonar.projectName="Booking Travel Service" \
                         -Dsonar.java.binaries=target/classes'
@@ -45,7 +45,7 @@ pipeline {
 
         stage('Build Artifact / Docker Image') {
             steps {
-                sh 'mvn package -DskipTests'
+                sh './mvnw package -DskipTests'
             }
         }
     }
