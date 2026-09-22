@@ -6,6 +6,11 @@ pipeline {
         jdk 'JDK 21'
     }
 
+    environment {
+        SPRING_USER = 'admin'
+        SPRING_PASSWORD = 'admin'
+    }
+
     stages {
         stage('Checkout Source Code') {
             steps {
