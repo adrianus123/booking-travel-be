@@ -128,8 +128,9 @@ class AuthServiceImplTest {
 
     @Test
     void login_Success() {
+        Authentication auth = mock(Authentication.class);
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(mock(Authentication.class));
+                .thenReturn(auth);
         when(jwtUtil.generateToken(loginRequest.getEmail())).thenReturn("access-token");
 
         Map<String, Object> result = authService.login(loginRequest);
