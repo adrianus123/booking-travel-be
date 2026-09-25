@@ -1,6 +1,8 @@
 package com.travel.booking.domain.schedule.service.impl;
 
+import com.travel.booking.common.payload.BasePaging;
 import com.travel.booking.domain.schedule.dto.request.ScheduleRequestDTO;
+import com.travel.booking.domain.schedule.dto.request.ScheduleSearchRequestDTO;
 import com.travel.booking.domain.schedule.dto.response.FleetDTO;
 import com.travel.booking.domain.schedule.dto.response.RouteDTO;
 import com.travel.booking.domain.schedule.dto.response.ScheduleDTO;
@@ -11,10 +13,16 @@ import com.travel.booking.domain.schedule.repository.FleetRepository;
 import com.travel.booking.domain.schedule.repository.RouteRepository;
 import com.travel.booking.domain.schedule.repository.ScheduleRepository;
 import com.travel.booking.domain.schedule.service.ScheduleService;
+import com.travel.booking.domain.schedule.service.specification.ScheduleSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 import static com.travel.booking.common.util.StringUtil.formattingPrice;
 
@@ -94,6 +102,30 @@ public class ScheduleServiceImpl implements ScheduleService {
         scheduleRepository.delete(schedule);
 
         return !scheduleRepository.existsById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BasePaging<ScheduleDTO> getSchedules(ScheduleSearchRequestDTO keyword, Pageable pageable) {
+        Specification<Schedule> specification = Specification.where(
+                ScheduleSpecification.fleetModelContains(keyword.getModel())
+                        .and(ScheduleSpecification.fleetPlateNoContains(keyword.getPlateNo()))
+                        .and(ScheduleSpecification.routeDepCityContains(keyword.getDepCity()))
+                        .and(ScheduleSpecification.routeDestCityContains(keyword.getDestCity()))
+                        .and(ScheduleSpecification.hasScheduleDepTime(keyword.getDepDate()))
+                        .and(ScheduleSpecification.hasScheduleArrTime(keyword.getArrDate()))
+        );
+
+        Page<Schedule> schedules = scheduleRepository.findAll(specification, pageable);
+        List<ScheduleDTO> result = schedules.stream().map(this::constructScheduleDto).toList();
+
+        return BasePaging.<ScheduleDTO>builder()
+                .data(result)
+                .page(pageable.getPageNumber())
+                .size(pageable.getPageSize())
+                .totalPage(schedules.getTotalPages())
+                .totalData(schedules.getTotalElements())
+                .build();
     }
 
     private Fleet getScheduleFleet(String plateNo) {
