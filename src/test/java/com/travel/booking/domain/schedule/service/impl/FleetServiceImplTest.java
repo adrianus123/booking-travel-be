@@ -1,5 +1,6 @@
 package com.travel.booking.domain.schedule.service.impl;
 
+import com.travel.booking.common.payload.BasePaging;
 import com.travel.booking.domain.schedule.dto.request.FleetRequestDTO;
 import com.travel.booking.domain.schedule.dto.response.FleetDTO;
 import com.travel.booking.domain.schedule.model.Fleet;
@@ -11,7 +12,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -243,5 +250,65 @@ class FleetServiceImplTest {
         assertThatThrownBy(() -> fleetService.getFleetDetail(99L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Fleet not found");
+    }
+
+    @Test
+    @DisplayName("getFleets - Berhasil mengembalikan data berpaginasi saat data ditemukan")
+    void getFleets_Success_DataExists() {
+        Pageable pageableDummy = PageRequest.of(0, 10);
+
+        FleetDTO keywordDummy = FleetDTO.builder()
+                .plateNo("D 1 AR")
+                .model("Shuttle")
+                .tSeats(8)
+                .build();
+
+        List<Fleet> fleetList = List.of(fleetDummy);
+        Page<Fleet> fleetPage = new PageImpl<>(fleetList, pageableDummy, 1);
+
+        when(fleetRepository.findAll(any(Specification.class), eq(pageableDummy)))
+                .thenReturn(fleetPage);
+
+        BasePaging<FleetDTO> result = fleetService.getFleets(keywordDummy, pageableDummy);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getData()).hasSize(1);
+        assertThat(result.getPage()).isZero();
+        assertThat(result.getSize()).isEqualTo(10);
+        assertThat(result.getTotalPage()).isEqualTo(1);
+        assertThat(result.getTotalData()).isEqualTo(1L);
+
+        FleetDTO actualDto = result.getData().getFirst();
+        assertThat(actualDto.getPlateNo()).isEqualTo("D 1 AR");
+        assertThat(actualDto.getModel()).isEqualTo("Shuttle");
+        assertThat(actualDto.getTSeats()).isEqualTo(8);
+
+        verify(fleetRepository, times(1)).findAll(any(Specification.class), eq(pageableDummy));
+    }
+
+    @Test
+    @DisplayName("getFleets - Berhasil mengembalikan halaman kosong saat data tidak ditemukan")
+    void getFleets_Success_EmptyList() {
+        Pageable pageableDummy = PageRequest.of(0, 10);
+
+        FleetDTO keywordDummy = FleetDTO.builder()
+                .plateNo("D 1 AR")
+                .model("Shuttle")
+                .tSeats(8)
+                .build();
+
+        Page<Fleet> emptyPage = new PageImpl<>(List.of(), pageableDummy, 0);
+
+        when(fleetRepository.findAll(any(Specification.class), eq(pageableDummy)))
+                .thenReturn(emptyPage);
+
+        BasePaging<FleetDTO> result = fleetService.getFleets(keywordDummy, pageableDummy);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getData()).isEmpty();
+        assertThat(result.getTotalData()).isZero();
+        assertThat(result.getTotalPage()).isZero();
+
+        verify(fleetRepository, times(1)).findAll(any(Specification.class), eq(pageableDummy));
     }
 }
