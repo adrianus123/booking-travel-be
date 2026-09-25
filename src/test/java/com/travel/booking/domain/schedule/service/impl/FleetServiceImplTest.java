@@ -213,4 +213,35 @@ class FleetServiceImplTest {
 
         verify(fleetRepository, never()).delete(any(Fleet.class));
     }
+
+    @Test
+    @DisplayName("getFleetDetail - Berhasil menampilkan detail kendaraan")
+    void getFleetDetail_Success() {
+        when(fleetRepository.findById(1L)).thenReturn(Optional.of(fleetDummy));
+
+        FleetDTO result = fleetService.getFleetDetail(1L);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getPlateNo()).isEqualTo("D 1 AR");
+        assertThat(result.getModel()).isEqualTo("Shuttle");
+        assertThat(result.getTSeats()).isEqualTo(8);
+    }
+
+    @Test
+    @DisplayName("getFleetDetail - Gagal & melempar Exception ID tidak boleh kosong")
+    void getFleetDetail_Failed_IdIsNull() {
+        assertThatThrownBy(() -> fleetService.getFleetDetail(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Fleet id cannot be null");
+    }
+
+    @Test
+    @DisplayName("getFleetDetail - Gagal & melempar Exception data tidak ditemukan")
+    void getFleetDetail_Failed_EntityNotFound() {
+        when(fleetRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> fleetService.getFleetDetail(99L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Fleet not found");
+    }
 }
