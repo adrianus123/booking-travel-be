@@ -29,10 +29,18 @@ class FleetServiceImplTest {
     private FleetServiceImpl fleetService;
 
     private FleetRequestDTO requestDummy;
+    private Fleet fleetDummy;
 
     @BeforeEach
     void setUp() {
         requestDummy = FleetRequestDTO.builder()
+                .plateNo("D 1 AR")
+                .model("Shuttle")
+                .tSeats(8)
+                .build();
+
+        fleetDummy = Fleet.builder()
+                .id(1L)
                 .plateNo("D 1 AR")
                 .model("Shuttle")
                 .tSeats(8)
@@ -42,15 +50,8 @@ class FleetServiceImplTest {
     @Test
     @DisplayName("createFleet - Berhasil menyimpan data ketika nomor kendaraan belum tersedia")
     void createFleet_Success() {
-        Fleet savedFleetDummy = Fleet.builder()
-                .id(1L)
-                .plateNo("D 1 AR")
-                .model("Shuttle")
-                .tSeats(8)
-                .build();
-
         when(fleetRepository.findByPlateNo(requestDummy.getPlateNo())).thenReturn(Optional.empty());
-        when(fleetRepository.save(any(Fleet.class))).thenReturn(savedFleetDummy);
+        when(fleetRepository.save(any(Fleet.class))).thenReturn(fleetDummy);
 
         FleetDTO result = fleetService.createFleet(requestDummy);
 
@@ -67,13 +68,6 @@ class FleetServiceImplTest {
     @Test
     @DisplayName("createFleet - Gagal & melempar Exception nomor kendaraan sudah tersedia")
     void createFleet_Failed_PlateNoIsExists() {
-        Fleet fleetDummy = Fleet.builder()
-                .id(1L)
-                .plateNo("D 1 AR")
-                .model("Shuttle")
-                .tSeats(8)
-                .build();
-
         when(fleetRepository.findByPlateNo(requestDummy.getPlateNo())).thenReturn(Optional.of(fleetDummy));
 
         assertThatThrownBy(() -> fleetService.createFleet(requestDummy))
@@ -87,13 +81,6 @@ class FleetServiceImplTest {
     @Test
     @DisplayName("updateFleet - Berhasil memperbarui data kendaraan tanpa mengubah nomor kendaraan")
     void updateFleet_Success_WithoutUpdatePlateNo() {
-        Fleet fleetDummy = Fleet.builder()
-                .id(1L)
-                .plateNo("D 1 AR")
-                .model("Shuttle")
-                .tSeats(8)
-                .build();
-
         when(fleetRepository.findById(1L)).thenReturn(Optional.of(fleetDummy));
         when(fleetRepository.save(any(Fleet.class))).thenReturn(fleetDummy);
 
@@ -112,13 +99,6 @@ class FleetServiceImplTest {
     @Test
     @DisplayName("updateFleet - Berhasil memperbarui data kendaraan dengan mengubah nomor kendaraan")
     void updateFleet_Success_WithUpdatePlateNo() {
-        Fleet fleetBeforeSaveDummy = Fleet.builder()
-                .id(1L)
-                .plateNo("D 1 AR")
-                .model("Shuttle")
-                .tSeats(8)
-                .build();
-
         FleetRequestDTO updateRequestDummy = FleetRequestDTO.builder()
                 .plateNo("D 2 TY")
                 .model("Hiacce")
@@ -132,7 +112,7 @@ class FleetServiceImplTest {
                 .tSeats(10)
                 .build();
 
-        when(fleetRepository.findById(1L)).thenReturn(Optional.of(fleetBeforeSaveDummy));
+        when(fleetRepository.findById(1L)).thenReturn(Optional.of(fleetDummy));
         when(fleetRepository.findByPlateNo(updateRequestDummy.getPlateNo())).thenReturn(Optional.empty());
         when(fleetRepository.save(any(Fleet.class))).thenReturn(fleetAfterSaveDummy);
 
@@ -177,13 +157,6 @@ class FleetServiceImplTest {
     @Test
     @DisplayName("updateFleet - Gagal & melempar Exception nomor kendaraan telah tersedia")
     void updateFleet_Failed_DuplicatePlateNo() {
-        Fleet fleetBeforeSaveDummy = Fleet.builder()
-                .id(1L)
-                .plateNo("D 1 AR")
-                .model("Shuttle")
-                .tSeats(8)
-                .build();
-
         FleetRequestDTO updateRequestDummy = FleetRequestDTO.builder()
                 .plateNo("D 2 TY")
                 .model("Hiacce")
@@ -197,12 +170,47 @@ class FleetServiceImplTest {
                 .tSeats(14)
                 .build();
 
-        when(fleetRepository.findById(1L)).thenReturn(Optional.of(fleetBeforeSaveDummy));
+        when(fleetRepository.findById(1L)).thenReturn(Optional.of(fleetDummy));
         when(fleetRepository.findByPlateNo(updateRequestDummy.getPlateNo())).thenReturn(Optional.of(existingFleet));
         assertThatThrownBy(() -> fleetService.updateFleet(updateRequestDummy, 1L))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Plate number of this fleet is exists");
 
         verify(fleetRepository, never()).save(any(Fleet.class));
+    }
+
+    @Test
+    @DisplayName("deleteFleet - Berhasil menghapus data")
+    void deleteFleet_Success() {
+        when(fleetRepository.findById(1L)).thenReturn(Optional.of(fleetDummy));
+        when(fleetRepository.existsById(1L)).thenReturn(false);
+
+        Boolean result = fleetService.deleteFleet(1L);
+
+        assertThat(result.booleanValue()).isTrue();
+
+        verify(fleetRepository, times(1)).delete(any(Fleet.class));
+    }
+
+    @Test
+    @DisplayName("deleteFleet - Gagal & melempar Exception ID tidak boleh kosong")
+    void deleteFleet_Failed_IdIsNull() {
+        assertThatThrownBy(() -> fleetService.deleteFleet(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Fleet id cannot be null");
+
+        verify(fleetRepository, never()).delete(any(Fleet.class));
+    }
+
+    @Test
+    @DisplayName("deleteFleet - Gagal & melempar Exception data tidak tersedia")
+    void deleteFleet_Failed_EntityNotFound() {
+        when(fleetRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> fleetService.deleteFleet(99L))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Fleet not found");
+
+        verify(fleetRepository, never()).delete(any(Fleet.class));
     }
 }
